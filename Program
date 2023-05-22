@@ -1,0 +1,1083 @@
+libname IRL "file Path";
+data set0;
+set irl.austria;
+where
+TRSTPLT not in (77, 88, 99) &
+YRBRN not in (7777, 8888, 9999);
+run;
+proc sql;
+create table set1 as
+select *, 2022-YRBRN as AGE
+from set0;
+quit;
+%let var =
+DOMICIL
+TRSTPLT
+POLINTR
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+NWSPOL
+EDULVLB
+GNDR
+EUFTF
+RLGDGR
+TRSTLGL
+PSPPIPLA
+CLSPRTY
+HAPPY;
+/* wybrane zmienne */
+data set2;
+retain &var;
+set set1 (keep=&var);
+run;
+/*Utworzenie bazy bez wartości null*/
+data set3;
+set set2;
+where
+DOMICIL not in (7, 8, 9)and
+POLINTR not in (7, 8, 9)and
+BRNCNTR not in (7, 8, 9) and
+VTEURMMB not in (65,77, 88, 99) and
+LRSCALE not in (77, 88, 99) and
+EDULVLB not in (7777, 8888, 9999) and
+
+GNDR not in (9) and
+NWSPOL not in (7777, 8888, 9999) and
+EUFTF not in (77, 88, 99) and
+RLGDGR not in (77, 88, 99) and
+TRSTLGL not in (77, 88, 99) and
+PSPPIPLA not in (7, 8, 9) and
+CLSPRTY not in (7, 8, 9) and
+HAPPY not in (77, 88, 99);
+keep
+DOMICIL
+TRSTPLT
+POLINTR
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+NWSPOL
+GNDR
+EUFTF
+RLGDGR
+TRSTLGL
+PSPPIPLA
+CLSPRTY
+HAPPY;
+run;
+
+/*Dodatnie etykiet dla wybranych zmiennych*/
+DATA set4;
+SET set3;
+LABEL
+TRSTPLT = "Zaufanie do polityków"
+GNDR = "Płeć"
+AGE = "Wiek"
+POLINTR = "Zainteresowanie polityką"
+DOMICIL = "Miejsce zamieszkania"
+VTEURMMB = "Głosowałby za pozostaniem Austrii w Unii Europejskiej
+lub jej opuszczeniem"
+BRNCNTR = "Urodzony w kraju"
+LRSCALE = "Umiejscowienie na skali lewo prawo"
+EDULVLB = "Poziom wykształcenia"
+EUFTF = "Unia Europejska: Zjednoczenie Europy powinno iść dalej czy
+zaszło za daleko"
+RLGDGR = "Jak bardzo jesteś religijny"
+TRSTLGL = "Zaufanie do systemu prawnego"
+PSPPIPLA = "System polityczny pozwala ludziom mieć wpływ na
+politykę"
+CLSPRTY = "Czuje się bliżej konkretnej partii niż wszystkich innych
+partii"
+HAPPY= "Jak bardzo jesteś szczęśliwy";
+RUN;
+
+/*ZMIENNA ZALEŻNA*/
+TITLE;
+TITLE1 "Zmienna zależna TRSTPLT";
+PROC FREQ DATA=set4;
+table TRSTPLT;
+run;
+TITLE;
+/*rozkład zmiennej*/
+PROC UNIVARIATE data=set4;
+var TRSTPLT;
+histogram / normal midpoints=0 to 1 by 1;
+run;
+/*kategoryzacja zmiennej zależnej*/
+data set4;
+set set4;
+if TRSTPLT le 3 then TRSTPLT = 0;
+ else TRSTPLT=1;
+run;
+/*rozkład zmiennej*/
+PROC UNIVARIATE data=set4;
+var TRSTPLT;
+histogram / normal midpoints=0 to 1 by 1;
+run;
+/*ZMIENNE NIEZALEŻNE - PRZED REKATEGORYZACJĄ*/
+/*rozkład zmiennych*/
+TITLE;
+TITLE1 "Rozkłady zmiennych przed rekategoryzacją";
+proc freq data=set4;
+table
+POLINTR
+DOMICIL
+BRNCNTR
+VTEURMMB
+LRSCALE
+EDULVLB
+GNDR
+EUFTF
+RLGDGR
+TRSTLGL
+PSPPIPLA
+CLSPRTY
+HAPPY;
+run;
+
+/*tablice kontyngencji*/
+TITLE;
+TITLE1 "Tablice kontyngencji przed rekategoryzacją";
+PROC FREQ DATA=set4;
+TABLES
+POLINTR*TRSTPLT
+DOMICIL*TRSTPLT
+BRNCNTR*TRSTPLT
+VTEURMMB*TRSTPLT
+LRSCALE*TRSTPLT
+EDULVLB*TRSTPLT
+EUFTF*TRSTPLT
+GNDR*TRSTPLT
+RLGDGR*TRSTPLT
+TRSTLGL*TRSTPLT
+PSPPIPLA*TRSTPLT
+CLSPRTY*TRSTPLT
+HAPPY*TRSTPLT;
+RUN;
+proc freq data=set4;
+table (DOMICIL
+POLINTR
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+GNDR
+EUFTF
+RLGDGR
+TRSTLGL
+PSPPIPLA
+CLSPRTY
+HAPPY) * TRSTPLT;
+quit;
+/*Wykresy słupkowe dla zmiennych jakościowych*/
+TITLE;
+TITLE1 "Wykresy słupkowe dla zmiennych przed rekategoryzacją";
+PROC SGPLOT DATA = set4;
+VBAR POLINTR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+TITLE;
+PROC SGPLOT DATA = set4;
+VBAR DOMICIL / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+
+PROC SGPLOT DATA = set4;
+VBAR BRNCNTR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR VTEURMMB / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR LRSCALE / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR EDULVLB / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR GNDR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR EUFTF / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR RLGDGR / GROUP = TRSTPLT
+
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR TRSTLGL / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR PSPPIPLA / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR CLSPRTY/ GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set4;
+VBAR HAPPY / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+/*Histogramy i statystyki opisowe dla zmiennych ilościowych*/
+/*Zmienna age*/
+ods graphics on ;
+title;
+title1 "Histogram i wykres pudelkowy zmiennej AGE" ;
+proc means data =set4 mean std min max q1 median q3 skewness t
+kurtosis
+maxdec = 1 ;
+var age;
+run ;
+title;
+proc univariate data =set4;
+var age;
+histogram / normal ;
+run ;
+proc sgplot data=set4;
+histogram AGE /nbins=100;
+
+yaxis grid;
+run;
+ods graphics off ;
+/*ZMIENNE NIEZALEŻNE - KATEGORYZACJA*/
+data set5;
+set set4;
+/*NASZE*/
+if DOMICIL in (3:5) then DOMICIL=0;
+ else if DOMICIL in (1:2) then DOMICIL=1;
+/*NASZE*/
+if POLINTR=0 then POLINTR=0; 
+else if POLINTR = 1 then POLINTR=1;
+else if POLINTR = 2 then POLINTR=2;
+else if POLINTR = 3 then POLINTR=3;
+else if POLINTR = 4 then POLINTR=3;
+/*NASZE*/
+if BRNCNTR = 1 then BRNCNTR = 1;
+ else BRNCNTR = 0;
+if LRSCALE le 4 then LRSCALE = 0;
+ else if LRSCALE = 5 then LRSCALE = 1;
+ else LRSCALE = 2;
+if VTEURMMB = 1 then VTEURMMB = 0;
+ else VTEURMMB = 1;
+/* wykształcenie: do 223 włącznie mamy do czynienia
+ ze szkolnictwem podstawowym i średnim I stopnia;
+ 229 oznacza rozpoczęcie szkoły średniej II stopnia,
+ ale czas trwania nauki poniżej 2 lat i bez ukończenia jej*/
+/*NASZE*/
+/*NASZE*/
+if EDULVLB in (0:322) then EDULVLB = 0;
+/* szkoła średnia II stopnia*/
+/* szkoła policealna i szkoła wyższa o profilu zawodowym*/
+ else EDULVLB = 1;
+ /*NASZE*/
+
+if EUFTF le 4 then EUFTF=0;
+ else if EUFTF in (5) then EUFTF = 1;
+ else EUFTF = 2;
+/*NASZE*/
+if RLGDGR=0 then RLGDGR=0;
+ else if RLGDGR in (1:2) then RLGDGR = 1;
+ else if RLGDGR in (3:4) then RLGDGR = 2;
+ else if RLGDGR = 5 then RLGDGR = 3;
+ else if RLGDGR in (6:7) then RLGDGR = 4;
+ else RLGDGR = 5;
+/*NASZE*/
+if TRSTLGL le 4 then TRSTLGL=0;
+ else if TRSTLGL in (5:6) then TRSTLGL = 1;
+ else if TRSTLGL in (7) then TRSTLGL = 2;
+ else if TRSTLGL in (8) then TRSTLGL = 3;
+ else TRSTLGL = 4;
+if PSPPIPLA le 1 then PSPPIPLA=0;
+ else if PSPPIPLA in (2) then PSPPIPLA = 1;
+ else if PSPPIPLA in (3) then PSPPIPLA = 2;
+ else PSPPIPLA = 3;
+/*NASZE*/
+if HAPPY le 6 then HAPPY=1;
+else if HAPPY = 7 then HAPPY = 2;
+else if HAPPY = 8 then HAPPY = 3;
+else if HAPPY = 9 then HAPPY = 4;
+ else HAPPY = 5;
+/*NASZE*/
+keep
+DOMICIL
+TRSTPLT
+POLINTR
+AGE
+DOMICIL
+VTEURMMB
+BRNCNTR
+LRSCALE
+NWSPOL
+EDULVLB
+GNDR
+EUFTF
+RLGDGR
+TRSTLGL
+PSPPIPLA
+CLSPRTY
+HAPPY;
+run;
+TITLE;
+TITLE1 "Tablice kontyngencji zrekategoryzowanych zmiennych";
+/* tablice kontyngencji dla zmiennych po rekategoryzacji */
+PROC FREQ DATA=set5;
+TABLES
+POLINTR*TRSTPLT
+DOMICIL*TRSTPLT
+BRNCNTR*TRSTPLT
+VTEURMMB*TRSTPLT
+LRSCALE*TRSTPLT
+EDULVLB*TRSTPLT
+EUFTF*TRSTPLT
+GNDR*TRSTPLT
+RLGDGR*TRSTPLT
+TRSTLGL*TRSTPLT
+PSPPIPLA*TRSTPLT
+CLSPRTY*TRSTPLT
+HAPPY*TRSTPLT;
+RUN;
+title;
+/*ZMIENNE NIEZALEŻNE - PO KATEGORYZACJI*/
+/*rozkład zmiennych*/
+TITLE;
+TITLE1 "Rozkłady zmiennych po rekategoryzacji";
+proc freq data=set5;
+table
+POLINTR
+DOMICIL
+BRNCNTR
+
+TRSTPLT
+VTEURMMB
+LRSCALE
+EDULVLB
+GNDR
+EUFTF
+RLGDGR;
+run;
+/*Wykresy słupkowe dla zmiennych jakościowych po kategoryzacji*/
+TITLE;
+TITLE1 "Wykresy zrekategoryzowanych zmiennych";
+PROC SGPLOT DATA = set5;
+VBAR POLINTR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+title;
+PROC SGPLOT DATA = set5;
+VBAR DOMICIL / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR BRNCNTR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR VTEURMMB / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR LRSCALE / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+
+PROC SGPLOT DATA = set5;
+VBAR EDULVLB / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR GNDR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR EUFTF / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR RLGDGR / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR TRSTLGL / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR PSPPIPLA / GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR CLSPRTY/ GROUP = TRSTPLT
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+PROC SGPLOT DATA = set5;
+VBAR HAPPY / GROUP = TRSTPLT
+
+response=TRSTPLT
+stat=freq
+seglabel datalabel;
+RUN;
+/* KORELACJA - współczynniki korelacji Pearsona*/
+TITLE;
+TITLE1 "Współczynniki korelacji Pearsona";
+proc corr data=set5 PEARSON;
+var GNDR
+TRSTPLT
+DOMICIL
+POLINTR
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EUFTF
+RLGDGR
+TRSTLGL
+PSPPIPLA
+CLSPRTY
+HAPPY;
+run;
+/*eliminujemy VTEURMMB*/
+/* KORELACJA - współczynniki korelacji Pearsona po wykluczeniu
+zmiennych*/
+TITLE;
+TITLE1 "Współczynniki korelacji Pearsona po wykluczeniu TRSTLGL";
+proc corr data=set5 PEARSON;
+var GNDR
+TRSTPLT
+DOMICIL
+POLINTR
+AGE
+TRSTLGL
+BRNCNTR
+LRSCALE
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY;
+run;
+/*kategoryzacja do tol i vif*/
+data set6;
+set set5;
+if DOMICIL le 1 then DOMICIL=0;
+else DOMICIL=1;
+
+if VTEURMMB = 1 then VTEURMMB =1;
+else VTEURMMB=0;
+
+if LRSCALE = 0 then LRSCALE=0;
+else LRSCALE=1;
+
+if EUFTF=0 then EUFTF=0;
+else EUFTF=1;
+
+if RLGDGR=0 then RLGDGR=0;
+else RLGDGR=1;
+
+if PSPPIPLA le 1 then PSPPIPLA=0;
+else PSPPIPLA=1;
+
+if CLSPRTY=2 then CLSPRTY=0;
+else CLSPRTY=1;
+
+if HAPPY le 1 then HAPPY=0;
+else HAPPY=1;
+run;
+TITLE;
+TITLE1 "Sprawdzenie współliniowości";
+proc reg data=set6;
+model TRSTPLT=DOMICIL
+POLINTR
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/tol vif;
+run;
+/*Model wyjściowy ze wszystkimi zmiennymi, bez interakcji, AGE w
+postaci liniowej*/
+TITLE;
+TITLE1 "Model początkowy ze wszystkimi zmiennymi";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+
+POLINTR
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+/*sprawdzenie czy mozna polepszyc model*/
+/*Przekształcenie zmiennej ciągłej*/
+/*zamiana zmiennej age na kwadrat - nizsze AIC dla wyrazu wolnego i
+wspolzmiennych*/
+TITLE;
+TITLE1 "Model z AGE*AGE";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+POLINTR
+AGE * AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+TITLE;
+TITLE1 "Model z age*age*age";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+
+GNDR
+POLINTR
+AGE * AGE * AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+DATA set5;
+SET set5;
+LOG_AGE=LOG10(AGE);
+EXP_AGE=EXP(AGE);
+RUN;
+/* LOG(AGE) - wyzsze AIC niz pierowtny model */
+TITLE;
+TITLE1 "Model ze zlogarytmizowaną zmienną AGE";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+POLINTR
+LOG_AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+/* exp(AGE) - najwyzsze AIC */
+TITLE;
+TITLE1 "Model ze zmienną AGE w postaci eksponencjalnej";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+POLINTR
+EXP_AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+/* zmienna age posiada lepsze rezultaty po przeksztalceniach, wiec
+stosujemy logit empiryczny*/
+/*Wykres empirycznego logitu dla zmiennej age */
+TITLE;
+TITLE1 "Wykres empirycznego logitu";
+proc rank data=set5
+groups=30 out=ranks;
+var AGE;
+ranks bin;
+run;
+proc means data=ranks
+noprint nway;
+class bin;
+var TRSTPLT AGE;
+output out=bins
+sum(TRSTPLT)=TRSTPLT mean(AGE)=AGE n(AGE)=cases;
+run;
+data bins;
+set bins;
+logit=log((TRSTPLT+0.5)/(cases-TRSTPLT+0.5));
+run;
+proc sgplot data= bins;
+loess y=logit x=AGE;
+yaxis label="Empiryczny logit";
+run;
+title;
+
+/*Sprawdzenie AGE w postaci wielomianowej (wielomian 3. stopnia)*/
+/*Metoda Backward*/
+ODS GRAPHICS ON;
+%_eg_conditional_dropds(WORK.SORTTempTableSorted);
+/* -----------------------------------------------------------------
+--
+ Sortowanie zbioru Local:WORK.SET5
+ -----------------------------------------------------------------
+-- */
+PROC SQL;
+CREATE VIEW WORK.SORTTempTableSorted AS
+SELECT T.TRSTPLT, T.AGE, T.DOMICIL, T.POLINTR,
+T.VTEURMMB, T.BRNCNTR, T.LRSCALE, T.EDULVLB, T.GNDR, T.EUFTF,
+T.RLGDGR, T.PSPPIPLA, T.CLSPRTY, T.HAPPY
+FROM WORK.SET5 as T
+;
+QUIT;
+TITLE;
+TITLE1 "Modele ze zmienną age w postaci wielomianowej - metoda
+backward";
+FOOTNOTE;
+FOOTNOTE1 "Wygenerowane przez SAS-a (&_SASSERVERNAME, &SYSSCPL)
+dnia %TRIM(%QSYSFUNC(DATE(), NLDATE20.)) o
+godz. %TRIM(%QSYSFUNC(TIME(), NLTIMAP25.))";
+PROC LOGISTIC DATA=WORK.SORTTempTableSorted
+PLOTS(ONLY)=ODDSRATIO
+PLOTS(ONLY)=ROC
+;
+CLASS DOMICIL (PARAM=REF) POLINTR (PARAM=REF) VTEURMMB
+(PARAM=REF) BRNCNTR (PARAM=REF) LRSCALE (PARAM=REF) EDULVLB
+(PARAM=REF) GNDR (PARAM=REF) EUFTF (PARAM=REF) RLGDGR
+(PARAM=REF) PSPPIPLA (PARAM=REF) CLSPRTY (PARAM=REF) HAPPY
+(PARAM=REF);
+MODEL TRSTPLT (Event = '1')=DOMICIL POLINTR VTEURMMB BRNCNTR
+LRSCALE EDULVLB GNDR EUFTF RLGDGR PSPPIPLA CLSPRTY HAPPY AGE AGE*AGE
+AGE*AGE*AGE AGE*AGE*AGE*AGE /
+SELECTION=BACKWARD
+SLS=0.05
+INCLUDE=12
+LACKFIT
+RSQUARE
+CTABLE
+LINK=LOGIT
+CLPARM=WALD
+CLODDS=WALD
+ALPHA=0.05
+;
+RUN;
+QUIT;
+/* -----------------------------------------------------------------
+--
+ Koniec kodu zadania
+ -----------------------------------------------------------------
+-- */
+RUN; QUIT;
+%_eg_conditional_dropds(WORK.SORTTempTableSorted);
+TITLE; FOOTNOTE;
+ODS GRAPHICS OFF;
+/*Metodą BACKWARD otrzymano, że do modelu powinny zostać wprowadzona
+zmienna AGE*/
+/*jako wielomian drugiego stopnia*/
+/*Badanie zmiennych zakłócających*/
+/*Sprawdzanie, czy któraś ze zmiennych nieistotnych jest zmienną
+zakłócająca +-10%*/
+/*Zaczynamy od największego p-value*/
+/*Model ze wszystkimi zmiennymi (do porównania)*/
+TITLE;
+TITLE1 "Model ze wszystkimi zmiennymi (AGE w postaci wielomianu 2
+stopnia)";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+POLINTR
+AGE
+AGE*AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+TITLE;
+TITLE1 "Model z usuniętą zmienną BRNCNTR";
+/*Po usunięciu BRNCNTR*/
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+POLINTR
+AGE
+AGE*AGE
+VTEURMMB
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+
+/*Przy żadnej zmienne zmiana oceny parametru nie przekracza
++-10%*/
+/*Po usunięciu GNDR*/
+TITLE;
+TITLE1 "Model z usuniętą zmienną GNDR";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+POLINTR
+AGE
+AGE*AGE
+VTEURMMB
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+/*Zmienna GNDR może zostać usunięta z modelu - nie zmienia oceny
+parametru o +-10%*/
+/*przy zmiennych RLGDGR i AGE (hipotezy badawcze)*/
+/*Kolejną zmienną nieistotną statystycznie jest EDULVLB*/
+/*Sprawdzamy jak zmieniają się oceny parametrów*/
+TITLE;
+TITLE1 "Model z usuniętą zmienną EDULVLB";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+LRSCALE(PARAM=REF ref='1')
+RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+POLINTR
+AGE
+AGE*AGE
+VTEURMMB
+LRSCALE
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+/*Nie ma wpływu większego niż 10% na zmienne z hipotezy*/
+
+/*Sprawdzamy osttatnią zmienną DOMICIL*/
+TITLE;
+TITLE1 "Model z usuniętą zmienną DOMICIL";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2')
+VTEURMMB(PARAM=REF ref='0')
+LRSCALE(PARAM=REF ref='1')
+RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') =
+POLINTR
+AGE
+AGE*AGE
+VTEURMMB
+LRSCALE
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY/
+SELECTION = NONE
+ALPHA=0.05;
+RUN;
+/*Przy age i rlgdgr - oceny nie ulegają zmianie o więcej niż 10%*/
+/*Sprawdzamy jeszcze interakcje*/
+/*Potencjalnie zmienne BRNCNTR, GNDR, EDULVLB, DOMCIL mogą zostać
+usunięte z modelu*/
+/*Nie są zmiennymi zakłócającymi*/
+
+/*Zanim to zrobimy, sprawdzamy, czy nie występują w istotnych
+interakcjach*/
+/*Model z wymuszonymi wszystkimi efektami głównymi*/
+TITLE;
+TITLE1 "Model z wymuszonymi wszystkimi efektami głównymi";
+PROC LOGISTIC DATA=set5;
+CLASS POLINTR(PARAM=REF ref='2') GNDR(PARAM=REF ref='1')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+GNDR
+POLINTR
+AGE
+AGE*AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+PSPPIPLA
+CLSPRTY
+HAPPY
+DOMICIL|GNDR|POLINTR|AGE|AGE*AGE|VTEURMMB|BRNCNTR|LRSCALE|
+EDULVLB|EUFTF|RLGDGR|PSPPIPLA|CLSPRTY|HAPPY @2/
+SELECTION=STEPWISE
+SLE=0.05
+SLS=0.05
+INCLUDE=14
+LINK=LOGIT;
+RUN;
+/*Zmienne wchodzące w istotne interakcje: AGE, RLGDGR, DOMICIL,
+LRSCALE, EDULVLB
+HAPPY,EUFTF,BRNCNTR,CLSPRTY, VTEURMMB*/
+/*BRNCNTR, EDULVLB, DOMICIL wchodzą w istotne interakcje,
+jedynie zmienna GNDR może zostać całkowicie usunięta z modelu*/
+/*Redukcja modelu*/
+/*Model - metoda krokowa- z wymuszonymi 10 efektami głównymi:
+AGE, RLGDGR, DOMICIL, LRRSCALE, EDULVLB
+HAPPY,EUFTF,BRNCNTR,CLSPRTY, VTEURMMB (zmienna będące w interakcjach
+oraz zmienne głównego zainteresowania)*/
+ODS GRAPHICS ON;
+TITLE;
+TITLE1 "Redukcja modelu metodą STEPWISE";
+PROC LOGISTIC DATA=set5
+ PLOTS(UNPACK LABELS)=ALL;
+CLASS POLINTR(PARAM=REF ref='2')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+CLSPRTY
+HAPPY
+PSPPIPLA
+POLINTR
+AGE*AGE
+DOMICIL|POLINTR|AGE|AGE*AGE|VTEURMMB|BRNCNTR|LRSCALE|
+EDULVLB|EUFTF|RLGDGR|PSPPIPLA|CLSPRTY|HAPPY @2/
+SELECTION=STEPWISE
+SLE=0.05
+SLS=0.05
+INCLUDE=10
+LACKFIT
+AGGREGATE SCALE=NONE
+RSQUARE
+CTABLE
+LINK=LOGIT
+CLPARM=WALD
+CLODDS=WALD
+ALPHA=0.05;
+RUN;
+TITLE; FOOTNOTE;
+ODS GRAPHICS OFF;
+/*Model końcowy*/
+/*ods noproctitle;*/
+/*ods escapechar="^";*/
+/*ods html5 file="D:\\Regresja Projekt\\raport_final.html";*/
+ods graphics on;
+TITLE;
+TITLE1 "Model końcowy";
+PROC LOGISTIC DATA=set5 PLOTS(unpack label)=ALL;
+CLASS POLINTR(PARAM=REF ref='2')
+VTEURMMB(PARAM=REF ref='0') DOMICIL(PARAM=REF ref='0')
+BRNCNTR(PARAM=REF ref='1') LRSCALE(PARAM=REF ref='1')
+EDULVLB(PARAM=REF ref='1') RLGDGR(PARAM=REF ref='4')
+EUFTF(PARAM=REF ref='2') PSPPIPLA(PARAM=REF ref='1')
+CLSPRTY(PARAM=REF ref='2') HAPPY(PARAM=REF ref='3');
+MODEL TRSTPLT (Event = '1') = DOMICIL
+AGE
+VTEURMMB
+BRNCNTR
+LRSCALE
+EDULVLB
+EUFTF
+RLGDGR
+CLSPRTY
+HAPPY
+PSPPIPLA
+POLINTR
+AGE*AGE
+VTEURMMB*DOMICIL
+DOMICIL*LRSCALE
+BRNCNTR*LRSCALE
+AGE*RLGDGR
+EDULVLB*CLSPRTY
+EUFTF*CLSPRTY
+DOMICIL*HAPPY
+EDULVLB*HAPPY/
+SELECTION=NONE
+SLE=0.05
+SLS=0.05
+INCLUDE=10
+LINK=LOGIT
+INFLUENCE
+LACKFIT
+AGGREGATE
+SCALE=NONE
+RSQUARE
+CTABLE
+LINK=LOGIT
+CLPARM=WALD
+CLODDS=WALD
+ALPHA=0.05
+EXPB;
+oddsratio LRSCALE / DIFF=REF;
+oddsratio EDULVLB / DIFF=REF;
+oddsratio EUFTF /DIFF=REF;
+oddsratio RLGDGR / DIFF=REF;
+oddsratio PSPPIPLA / DIFF=REF;
+oddsratio POLINTR / DIFF=REF;
+RUN;
+title;
+ods graphics off;
+ods html close;
+/*ods html close;*/
